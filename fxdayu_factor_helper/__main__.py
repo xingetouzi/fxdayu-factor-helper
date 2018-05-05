@@ -64,6 +64,7 @@ def parse(filename):
 @click.command(short_help="Generate a factor template at given path.", help="Generate a factor template at FILEPATH")
 @click.argument('filepath', type=click.Path(exists=False))
 def generate(filepath):
+    filepath = os.path.abspath(filepath)
     f = os.path.join(os.path.dirname(__file__), "alpha126.py")
     if os.path.isfile(filepath):
         yes = input("File %s already exist!\nOverwrite it? (y/N)\n" % os.path.abspath(filepath))
