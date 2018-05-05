@@ -45,7 +45,7 @@ def parse(filename):
         print("因子代码:\n%s" % code)
         print("因子描述:\n%s" % doc)
         print("因子参数:%s" % ("" if params else " 无"))
-        for k, v in params:
+        for k, v in params.items():
             try:
                 description = descriptions[k]
             except KeyError:
