@@ -28,7 +28,7 @@ def parse(filename):
         print("因子描述:\n%s" % result["description"])
         print("因子参数:%s" % ("" if params else " 无"))
         for k, v in params.items():
-            print("参数名：%s 默认值：%s 描述：%s" % (k, v["default"], v["description"]))
+            print("参数名：%s 默认值：%s 描述：%s" % (k, v["default"], v["description"] or "NA"))
     error = data["error"] 
     if error:
         print(error)
@@ -99,7 +99,7 @@ def check(filepath, data_dir, output, concurrent, recursive):
                         files.append(file)
         else:
             for f in os.listdir(filepath):
-                file = os.path.join(filepath, file)
+                file = os.path.join(filepath, f)
                 if os.path.isfile(file) and file.endswith(".py"):
                     files.append(file)
     elif os.path.isfile(filepath):

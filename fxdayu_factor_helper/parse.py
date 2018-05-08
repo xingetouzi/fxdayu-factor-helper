@@ -2,24 +2,16 @@ import os
 import inspect
 import traceback
 import pathlib
+import json
 
 def execfile(filename, globals, locals):
     return exec(compile(open(filename, "rb").read(), filename, 'exec'), globals, locals)
 
-def parse_file(filename):
-    loc = {}
+def _parse(loc, name, code=None):
     result = {}
     error = None
     warnings = []
-    try:
-        execfile(filename, loc, loc)
-    except Exception:
-        error = "策略代码执行出错:\n%s" % traceback.format_exc()
-        return {
-            "result": result,
-            "error": error,
-            "warnings": warnings, 
-        }, False
+
     def get_value(dct, key, message, default=None, throw=True):
         try:
             return dct[key]
@@ -36,13 +28,15 @@ def parse_file(filename):
         params = get_value(loc, "default_params", "未定义因子参数的默认值default_params，如因子没有使用参数，请忽略.",
             default={}, throw=False)
         descriptions = loc.get("params_description", {})
-        realpath = pathlib.Path(filename).absolute()
-        name = str(realpath).split(os.path.sep)[-1].replace(".py", "")
         author = get_value(loc, "__author__", "未填写因子作者")
-        code = inspect.getsource(func)
+        code = code if code is not None else inspect.getsource(func)
         doc = inspect.cleandoc(func.__doc__)
         params_info = {}
         for k, v in params.items():
+            try:
+                json.dumps(v)
+            except Exception:
+                raise TypeError("参数%s默认值类型错误,只支持可被json序列化的类型" % k)
             try:
                 description = descriptions[k]
             except KeyError:
@@ -60,8 +54,48 @@ def parse_file(filename):
     except Exception:
         error = "因子解析错误:\n%s" % traceback.format_exc()
         result = {}
+    return result, error, warnings
+
+def parse_code(name, code):
+    loc = {}
+    result = {}
+    error = None
+    warnings = []
+    try:
+        exec(compile(code, name + ".py", 'exec'), loc, loc)
+    except Exception:
+        error = "策略代码执行出错:\n%s" % traceback.format_exc()
+        return {
+            "result": result,
+            "error": error,
+            "warnings": warnings, 
+        }, False
+    result, error, warnings = _parse(loc, name, code)
     return {
         "result": result,
         "error": error,
         "warnings": warnings, 
-    }, bool(result)
+    }, error is None
+
+def parse_file(filename):
+    loc = {}
+    result = {}
+    error = None
+    warnings = []
+    try:
+        execfile(filename, loc, loc)
+    except Exception:
+        error = "策略代码执行出错:\n%s" % traceback.format_exc()
+        return {
+            "result": result,
+            "error": error,
+            "warnings": warnings, 
+        }, False
+    realpath = pathlib.Path(filename).absolute()
+    name = str(realpath).split(os.path.sep)[-1].replace(".py", "")
+    result, error, warnings = _parse(loc, name, None)
+    return {
+        "result": result,
+        "error": error,
+        "warnings": warnings, 
+    }, error is None
