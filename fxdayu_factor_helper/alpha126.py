@@ -9,6 +9,7 @@ def run_formula(dv, params=default_params):
     """
     这里填写因子的描述信息,详细阐述因子的逻辑，必要时附带公式说明
     """
-    value = dv.add_formula('alpha126', "(close+high+low)/3",
+    name = "alpha126" # 和文件名即因子名一致
+    value = dv.add_formula(name, "(close+high+low)/3",
         is_quarterly=False, add_data=True)
     return value
