@@ -3,6 +3,7 @@ import inspect
 import sys
 import traceback
 import click
+import pathlib
 from concurrent import futures
 
 from fxdayu_factor_helper.parse import parse_file
@@ -45,14 +46,14 @@ def parse(filename):
 @click.argument('filepath', type=click.Path(exists=False))
 def generate(filepath):
     filepath = os.path.abspath(filepath)
-    f = os.path.join(os.path.dirname(__file__), "alpha126.py")
+    f = pathlib.Path(__file__).parent / "examples" / "alpha126.py"
     if os.path.isfile(filepath):
         yes = input("File %s already exist!\nOverwrite it? (y/N)\n" % os.path.abspath(filepath))
     else:
         yes = 'y'
     if yes.lower() == 'y':
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
-        with open(f, "rb") as src:
+        with open(str(f), "rb") as src:
             with open(filepath, "wb") as dst:
                 dst.write(src.read())
     else:
@@ -68,7 +69,8 @@ def do_check_file(filepath, data_dir):
 @click.option("--data-dir", "-d", help="The data dir, default %s" % get_default_data_root())
 @click.option("--output", "-o", type=click.Path(exists=False), help="Write output the to given file.")
 @click.option("--concurrent", "-c", type=click.INT, help="Concurrent pool number.")
-def check(filepath, data_dir, output, concurrent):
+@click.option("--recursive", "-r", is_flag=True, help="Check all .py file recursively, if path is a directory.")
+def check(filepath, data_dir, output, concurrent, recursive):
     all_ok = True
     success = []
     failed = []
@@ -89,9 +91,17 @@ def check(filepath, data_dir, output, concurrent):
 
     files = []
     if os.path.isdir(filepath):
-        for file in os.listdir(filepath):
-            if file.endswith(".py"):
-                files.append(os.path.join(filepath, file))
+        if recursive:
+            for root, _, fs in os.walk(filepath, topdown=False):
+                for f in fs: 
+                    file = os.path.join(root, f)
+                    if os.path.isfile(file) and file.endswith(".py"):
+                        files.append(file)
+        else:
+            for f in os.listdir(filepath):
+                file = os.path.join(filepath, file)
+                if os.path.isfile(file) and file.endswith(".py"):
+                    files.append(file)
     elif os.path.isfile(filepath):
        files.append(filepath)
     max_workers = concurrent or os.cpu_count()
