@@ -66,7 +66,7 @@ def do_check_file(filepath, data_dir):
 
 @click.command(help="Run check for a factor", short_help="Run calulation of factor in FILEPATH, and check the output.")
 @click.argument('filepath', type=click.Path(exists=True))
-@click.option("--data-dir", "-d", help="The data dir, default %s" % get_default_data_root())
+@click.option("--data-dir", "-d", type=click.Path(exists=True), help="The data dir, default %s" % get_default_data_root())
 @click.option("--output", "-o", type=click.Path(exists=False), help="Write output the to given file.")
 @click.option("--concurrent", "-c", type=click.INT, help="Concurrent pool number.")
 @click.option("--recursive", "-r", is_flag=True, help="Check all .py file recursively, if path is a directory.")
@@ -104,7 +104,7 @@ def check(filepath, data_dir, output, concurrent, recursive):
                     files.append(file)
     elif os.path.isfile(filepath):
        files.append(filepath)
-    max_workers = concurrent or os.cpu_count()
+    max_workers = max(min(len(files), concurrent or os.cpu_count() // 2), 1)
     with futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
         future_to_file = {executor.submit(do_check_file, file, data_dir): file for file in files}
         for future in futures.as_completed(future_to_file):

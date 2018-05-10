@@ -17,7 +17,7 @@ def readme():
 
 
 def version():
-    return "0.1.1"
+    return "0.1.2"
 
 
 requirements = [str(ir.req) for ir in parse_requirements("requirements.txt", session=False)]

@@ -32,6 +32,8 @@ def get_dv(start = 20170101,end = 20180101):
     dv = DataView()
     dv.init_from_config(dv_props, data_api=ds)
     dv.prepare_data()
+    hs300_benchmark = dv.data_api.daily("000300.SH",dv.extended_start_date_d,dv.end_date,fields='trade_date,close')
+    dv.data_benchmark=hs300_benchmark[0][['trade_date','close']].set_index('trade_date')
     return dv
 
 def check(factor, data):
